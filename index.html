@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gunting Batu Kertas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="background-canvas"></canvas>
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Suara -->
+  <audio id="bg-music" src="assets/bg-music.mp3" loop></audio>
+  <audio id="sfx-win" src="assets/win.mp3"></audio>
+  <audio id="sfx-lose" src="assets/lose.mp3"></audio>
+  <audio id="sfx-draw" src="assets/draw.mp3"></audio>
+  <audio id="sfx-click" src="assets/click.mp3"></audio>
+
+  <!-- Intro -->
+  <div id="intro-screen" class="intro-screen">
+    <div class="intro-content">
+      <h2 class="intro-title">🕹️ Gunting Batu Kertas vs ys</h2>
+      <p class="intro-subtitle">Siap untuk main hasya cantik??</p>
+      <button id="start-button">Mulai Game</button>
+      <button id="music-button">🎵 Hidupkan Musik</button>
+    </div>
+  </div>
+
+  <!-- Game -->
+  <div class="game-box">
+    <h1>🕹️ Gunting Batu Kertas</h1>
+    <div class="difficulty">
+      <label for="difficulty">Level :</label>
+      <select id="difficulty">
+        <option value="mudah">Mudah</option>
+        <option value="sedang">Sedang</option>
+        <option value="sulit">Sulit</option>
+      </select>
+    </div>
+
+    <div class="character-area">
+      <div class="char">
+        <img src="assets/player.jpg" class="char-img" id="player-char">
+        <p>Hasyaa</p>
+      </div>
+      <div class="char">
+        <img src="assets/ai.jpg" class="char-img" id="ai-char">
+        <p>Ys</p>
+      </div>
+    </div>
+
+    <div class="score-display">
+      <span id="player-score">0</span> : <span id="ai-score">0</span>
+    </div>
+
+    <div class="choices">
+      <button class="choice" data-choice="batu">🪨</button>
+      <button class="choice" data-choice="gunting">✂️</button>
+      <button class="choice" data-choice="kertas">📄</button>
+    </div>
+
+    <div class="ai-choice-display">Pilihan Ys: <span id="ai-choice-text">-</span></div>
+    <div class="vs-text" id="vs">Hasyaa VS Ys</div>
+    <div class="result" id="result">Pilih salah satu untuk memulai!</div>
+    <button class="reset-btn" onclick="resetGame()">🔄 Reset Game</button>
+  </div>
+
+  <!-- Balon & Maskot -->
+  <div id="chat-bubble">👋 Hai Hasya! Ayo Semangat lawan Ys!</div>
+  <img src="assets/maskot.gif" id="maskot" />
+
+  <!-- Popup -->
+  <div id="popup-result" class="popup hidden">
+    <div class="popup-content">
+      <h2 id="popup-message">🎉 Kamu Menang!</h2>
+      <p>Skor akhir: <span id="popup-score">5 : 3</span></p>
+      <button onclick="resetPopup()">🔄 Main Lagi</button>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script src="script.js"></script>
+  <script>
+    const startButton = document.getElementById("start-button");
+    const musicButton = document.getElementById("music-button");
+    const bgMusic = document.getElementById("bg-music");
+
+    startButton.addEventListener("click", () => {
+      document.getElementById("intro-screen").classList.add("fade-out");
+      setTimeout(() => {
+        document.getElementById("intro-screen").style.display = "none";
+      }, 1000);
+    });
+
+    musicButton.addEventListener("click", () => {
+      bgMusic.volume = 0.2;
+      bgMusic.play();
+    });
+
+    window.addEventListener("load", () => {
+      try {
+        bgMusic.volume = 0.2;
+        bgMusic.play().catch(() => {});
+      } catch {}
+    });
+
+    // Partikel Latar
+    const canvas = document.getElementById('background-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 2 + 1,
+        speed: Math.random() * 0.5 + 0.5,
+      });
+    }
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.y += p.speed;
+        if (p.y > canvas.height) {
+          p.y = 0;
+          p.x = Math.random() * canvas.width;
+        }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = '#00ffcc55';
+        ctx.fill();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Confetti
+    const confettiCanvas = document.getElementById("confetti-canvas");
+    const confettiCtx = confettiCanvas.getContext("2d");
+    let confettis = [];
+
+    function createConfetti() {
+      confettis = [];
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+      for (let i = 0; i < 150; i++) {
+        confettis.push({
+          x: Math.random() * confettiCanvas.width,
+          y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+          r: Math.random() * 6 + 4,
+          d: Math.random() * 40 + 10,
+          color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+          tilt: Math.random() * 10 - 10,
+          tiltAngle: 0,
+          speed: Math.random() * 3 + 2,
+        });
+      }
+    }
+
+    function drawConfetti() {
+      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      confettis.forEach(c => {
+        confettiCtx.beginPath();
+        confettiCtx.lineWidth = c.r;
+        confettiCtx.strokeStyle = c.color;
+        confettiCtx.moveTo(c.x + c.tilt + c.r / 2, c.y);
+        confettiCtx.lineTo(c.x + c.tilt, c.y + c.d);
+        confettiCtx.stroke();
+      });
+      updateConfetti();
+      requestAnimationFrame(drawConfetti);
+    }
+
+    function updateConfetti() {
+      confettis.forEach(c => {
+        c.tiltAngle += 0.1;
+        c.y += c.speed;
+        c.tilt = Math.sin(c.tiltAngle) * 15;
+        if (c.y > confettiCanvas.height) {
+          c.y = -10;
+          c.x = Math.random() * confettiCanvas.width;
+        }
+      });
+    }
+
+    function startConfetti() {
+      createConfetti();
+      drawConfetti();
+    }
+
+    function stopConfetti() {
+      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      confettis = [];
+    }
+  </script>
+</body>
+</html>
